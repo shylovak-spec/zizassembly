@@ -59,21 +59,9 @@
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-        /* Оновлені стилі для контейнера зображення, щоб встановити фіксований розмір */
-        .image-wrapper {
-            width: 200px; /* Фіксована ширина */
-            height: 200px; /* Фіксована висота */
-            position: relative;
-            overflow: hidden;
-            border-radius: 1rem;
-        }
-        /* Властивість object-fit: contain масштабує зображення, щоб воно повністю помістилось у контейнер */
-        .image-wrapper img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .fixed-image {
+            width: 200px;
+            height: 200px;
             object-fit: contain;
         }
         @media (min-width: 640px) {
@@ -84,7 +72,7 @@
                 gap: 2rem;
             }
             .info-container {
-                align-items: flex-start;
+                align-items: center;
             }
             .content-section {
                 flex-direction: row;
@@ -97,6 +85,10 @@
                 align-items: center;
                 gap: 1rem;
             }
+            .image-and-buttons img {
+                width: 200px;
+                height: 200px;
+            }
             .buttons-container {
                 display: flex;
                 flex-direction: column;
@@ -107,30 +99,30 @@
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <!-- Головний контейнер додатку -->
     <div id="appContainer" class="container">
         
-        <!-- Цей блок буде прихований або видимий в залежності від того, що відображається -->
-        <div id="mainView">
-            <h1 class="text-3xl font-bold mb-6">Список хімічних речовин для дільниці складання</h1>
-            <div id="substanceList" class="space-y-4">
-                <!-- Список речовин буде згенеровано тут за допомогою JavaScript -->
+        <div id="mainView" class="w-full">
+            <h1 class="text-2xl font-bold mb-4 text-center sm:text-left">Список хімічних речовин для дільниці SMT</h1>
+            
+            <div class="mb-6">
+                <input type="text" id="searchInput" placeholder="Пошук речовини..." class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
             </div>
+
+            <div id="substanceList" class="space-y-4"></div>
         </div>
 
-        <!-- Цей блок буде прихований або видимий в залежності від того, що відображається -->
-        <div id="detailView" class="hidden">
-            <button onclick="showMainView()" class="absolute top-4 left-4 text-black text-2xl font-bold transition-all duration-300 transform hover:scale-105">
-                &larr;
-            </button>
-            <div id="detailContent" class="w-full flex flex-col sm:flex-row gap-8">
-                <!-- Детальна інформація буде згенерована тут -->
+        <div id="detailView" class="hidden w-full">
+            <div class="w-full text-left mb-2">
+                <button onclick="showMainView()" class="text-black text-3xl font-bold transition-all duration-300 transform hover:scale-110 focus:outline-none px-2">
+                    &larr;
+                </button>
             </div>
+            <div id="detailContent" class="w-full flex flex-col sm:flex-row gap-8">
+                </div>
         </div>
     </div>
 
     <script>
-        // Об'єкт з даними про хімічні речовини
         const substanceData = {
             'Спирт ізопропиловий': {
                 image: 'https://raw.githubusercontent.com/shylovak-spec/ziz/refs/heads/main/images/shopping.webp',
@@ -751,33 +743,56 @@
                 `
             },
         };
+        
+function renderList(searchTerm = '') {
+            const substanceList = document.getElementById('substanceList');
+            substanceList.innerHTML = '';
 
-        // Функція для відображення головної сторінки зі списком
+            const normalizedSearch = searchTerm.toLowerCase().trim();
+            let hasResults = false;
+
+            for (const substance in substanceData) {
+                if (substance.toLowerCase().includes(normalizedSearch)) {
+                    hasResults = true;
+                    const listItem = document.createElement('a');
+                    listItem.href = '#';
+                    listItem.classList.add('list-item');
+                    listItem.textContent = substance;
+                    listItem.onclick = (e) => {
+                        e.preventDefault();
+                        showDetailView(substance);
+                    };
+                    substanceList.appendChild(listItem);
+                }
+            }
+
+            if (!hasResults) {
+                substanceList.innerHTML = `<p class="text-gray-500 text-center py-4">Речовин за вашим запитом не знайдено.</p>`;
+            }
+        }
+
         function showMainView() {
             document.getElementById('mainView').classList.remove('hidden');
             document.getElementById('detailView').classList.add('hidden');
             document.getElementById('appContainer').classList.remove('detail-view');
         }
 
-        // Функція для відображення детальної інформації про речовину
         function showDetailView(substanceName) {
             const data = substanceData[substanceName];
             if (!data) return;
 
             const detailContent = document.getElementById('detailContent');
             detailContent.innerHTML = `
-                <!-- Контейнер для зображення та кнопок -->
-                <div class="image-and-buttons flex flex-col items-center w-full sm:w-1/2">
-                    <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-center">${substanceName}</h2>
-                    <!-- Оновлений контейнер для зображення з фіксованим розміром -->
-                    <div class="image-wrapper mb-4">
-                        <img src="${data.image}" alt="Зображення ${substanceName}" class="rounded-lg">
-                    </div>
-                    <div class="buttons-container w-full sm:w-auto">
-                        <button onclick='showSubstanceInfo(${JSON.stringify(substanceName)}, "dangers")' class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 mb-2">Небезпеки</button>
+                <div class="info-container w-full sm:w-1/2">
+                    <h2 class="text-xl sm:text-2xl font-semibold mb-4 text-center w-full">${substanceName}</h2>
+                    <div class="image-and-buttons flex flex-col items-center w-full">
+                        <img src="${data.image}" alt="Зображення ${substanceName}" class="rounded-lg mb-4 fixed-image">
+                        <div class="buttons-container w-full sm:w-auto">
+                            <button onclick='showSubstanceInfo(${JSON.stringify(substanceName)}, "dangers")' class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 mb-2">Небезпеки</button>
                             <button onclick='showSubstanceInfo(${JSON.stringify(substanceName)}, "actions")' class="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 mb-2">Дії при аварії</button>
                             <button onclick='showSubstanceInfo(${JSON.stringify(substanceName)}, "protection")' class="w-full bg-lime-600 hover:bg-lime-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 transform hover:scale-105 mb-2">Засоби захисту</button>
                             <button onclick='showSubstanceInfo(${JSON.stringify(substanceName)}, "industrialApplication")' class="w-full bg-neutral-400 hover:bg-neutral-500 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 transform hover:scale-105">Застосування на виробництві</button>
+                        </div>
                     </div>
                 </div>
 
@@ -790,32 +805,19 @@
             document.getElementById('appContainer').classList.add('detail-view');
         }
 
-        // Функція для відображення конкретної інформації про речовину (небезпеки, дії, захист)
         function showSubstanceInfo(substanceName, infoType) {
             const displayPanel = document.getElementById('substanceInfoDisplay');
-            const content = substanceData[substanceName][infoType];
-            displayPanel.innerHTML = content;
+            displayPanel.innerHTML = substanceData[substanceName][infoType];
         }
 
-        // Функція для ініціалізації додатка
         function initializeApp() {
-            const substanceList = document.getElementById('substanceList');
-            
-            // Динамічно генеруємо список речовин з об'єкта substanceData
-            for (const substance in substanceData) {
-                const listItem = document.createElement('a');
-                listItem.href = '#';
-                listItem.classList.add('list-item');
-                listItem.textContent = substance;
-                listItem.onclick = (e) => {
-                    e.preventDefault();
-                    showDetailView(substance);
-                };
-                substanceList.appendChild(listItem);
-            }
+            renderList();
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', (e) => {
+                renderList(e.target.value);
+            });
         }
 
-        // Запуск додатка при завантаженні сторінки
         window.onload = initializeApp;
     </script>
 </body>
